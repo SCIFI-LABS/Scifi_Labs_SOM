@@ -1,5 +1,5 @@
 #include <Arduino.h>
-#include <CAN.h>            // Built-in CAN library for Arduino Due or similar
+#include <CAN.h>            
 #include "PT1000.h"
 
 // PT1000 sensor setup
@@ -35,10 +35,9 @@ float calculateTemperature(float resistance) {
   // Callendar-Van Dusen equation coefficients for PT1000
   const float a = 3.9083e-3;
   const float b = -5.775e-7;
-  const float r0 = 1000.0; // Resistance at 0°C for PT1000
+  const float r0 = 1000.0; 
 
   // Solving the quadratic equation for temperature
-  // Note: This is a simplified approach and may need calibration for accuracy
   if (resistance <= 0) {
     return -273.15; // Absolute zero check
   }
@@ -122,5 +121,5 @@ void loop() {
 
   Serial.println("CAN message sent successfully.");
 
-  delay(1000); // Delay for readability
+  delay(1000); 
 }
