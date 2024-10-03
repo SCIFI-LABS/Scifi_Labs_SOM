@@ -14,7 +14,7 @@ const uint32_t CAN_ID = 0x300;             // CAN ID for VL53L0X
 const uint8_t CAN_DATA_LENGTH = 8;         // Length of CAN data in bytes
 
 // Diagnostic Flags
-uint8_t firmwareFlags = 0x01;              // Example: Firmware version 1
+uint8_t firmwareFlags = 0x01;              // Firmware version 1
 uint8_t hardwareFlags = 0x00;              // Initialize hardware flags
 
 // Function to calculate checksum 
@@ -113,7 +113,7 @@ void updateDiagnosticFlags(uint16_t range, bool timeout)
         hardwareFlags &= ~0x02; // Clear bit 1
     }
 
-    // Set firmware flag if range exceeds a threshold (e.g., 2000 mm)
+    // Set firmware flag if range exceeds a threshold 
     if (range > 2000) {
         firmwareFlags |= 0x04; // Set bit 2 to indicate range exceeds threshold
     } else {
