@@ -40,7 +40,7 @@ void setup()
 
     Serial.println("CAN bus initialized successfully.");
 
-    // Begin example of the magnetic sensor code (and add whitespace for easy reading)
+    // Begin example of the magnetic sensor code 
     Serial.println("TMAG5273 Example 1: Basic Readings");
     Serial.println("");
 
