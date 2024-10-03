@@ -1,5 +1,5 @@
 #include <Arduino.h>
-#include <CAN.h>           
+#include <CAN.h>            
 #include "PT1000.h"
 
 // PT1000 sensor setup
@@ -9,14 +9,18 @@ const float Rref = 1000.0;      // Reference resistor value in ohms (1kΩ)
 
 // Device and Sensor Configuration
 const uint8_t DEVICE_ADDRESS = 0x01;     // Unique ID for this sensor node
-const uint8_t SENSOR_TYPE_TEMP = 0x01;    // Identifier for Temperature Sensor
-const uint8_t DATA_PARAMETERS = 0x01;     // Number of data parameters (1: Temperature)
+const uint8_t SENSOR_TYPE_TEMP = 0x01;   // Identifier for Temperature Sensor
+const uint8_t DATA_PARAMETERS = 0x01;    // Number of data parameters (1: Temperature)
 
 // CAN Configuration
-const uint32_t CAN_ID = 0x100;            // CAN ID for Temperature Sensor
-const uint8_t CAN_DATA_LENGTH = 6;        // Length of CAN data in bytes
+const uint32_t CAN_ID = 0x100;           // CAN ID for Temperature Sensor
+const uint8_t CAN_DATA_LENGTH = 8;       // Length of CAN data in bytes
 
-// Function to calculate checksum (simple sum modulo 256)
+// Firmware and Hardware Flags
+uint8_t firmwareFlags = 0x00;            // Initialize firmware flags
+uint8_t hardwareFlags = 0x00;            // Initialize hardware flags
+
+// Function to calculate checksum 
 uint8_t calculateChecksum(uint8_t data[], uint8_t length) {
     uint16_t sum = 0;
     for (uint8_t i = 0; i < length; i++) {
@@ -38,6 +42,10 @@ void setup() {
     }
 
     Serial.println("CAN bus initialized successfully.");
+
+    // Initialize firmware and hardware flags
+    firmwareFlags = 0x01; // Firmware version 1
+    hardwareFlags = 0x00; // No hardware errors
 }
 
 void loop() {
@@ -54,15 +62,20 @@ void loop() {
     Serial.print(temperature, 2);
     Serial.println(" °C");
 
+    // Update diagnostic flags based on conditions
+    updateDiagnosticFlags(temperature);
+
     // Prepare CAN frame data
-    uint8_t canData[6] = {0}; // Initialize all bytes to 0
+    uint8_t canData[8] = {0}; // Initialize all bytes to 0
 
     // Structure:
     // Byte 0: Device Address
     // Byte 1: Sensor Type
     // Byte 2: Data Parameters
     // Byte 3-4: Temperature Data (16-bit integer, scaled)
-    // Byte 5: Checksum
+    // Byte 5: Firmware Flags
+    // Byte 6: Hardware Flags
+    // Byte 7: Checksum
 
     // Assign Device Address, Sensor Type, and Data Parameters
     canData[0] = DEVICE_ADDRESS;
@@ -76,17 +89,38 @@ void loop() {
     canData[3] = highByte(tempScaled);
     canData[4] = lowByte(tempScaled);
 
-    // Calculate checksum for bytes 0-4
-    canData[5] = calculateChecksum(canData, 5);
+    // Assign Firmware and Hardware Flags
+    canData[5] = firmwareFlags;
+    canData[6] = hardwareFlags;
+
+    // Calculate checksum for bytes 0-6
+    canData[7] = calculateChecksum(canData, 7);
 
     // Send the CAN frame
     CAN.beginPacket(CAN_ID);
-    CAN.write(canData, CAN_DATA_LENGTH); // Write the 6 bytes
+    CAN.write(canData, CAN_DATA_LENGTH); // Write the 8 bytes
     if (CAN.endPacket()) {
         Serial.println("CAN message sent successfully.");
     } else {
         Serial.println("Error sending CAN message.");
     }
 
-    delay(1000); 
+    delay(1000);
+}
+
+// Function to update diagnostic flags based on conditions
+void updateDiagnosticFlags(float temperature) {
+    // Set a firmware flag if the temperature exceeds a threshold
+    if (temperature > 100.0) {
+        firmwareFlags |= 0x02; // Set bit 1 to indicate high-temperature warning
+    } else {
+        firmwareFlags &= ~0x02; // Clear bit 1
+    }
+
+    // Set a hardware flag if the sensor reading is invalid
+    if (temperature < -50.0 || temperature > 150.0) {
+        hardwareFlags |= 0x01; // Set bit 0 to indicate sensor error
+    } else {
+        hardwareFlags &= ~0x01; // Clear bit 0
+    }
 }
