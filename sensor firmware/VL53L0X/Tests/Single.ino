@@ -1,69 +1,138 @@
-/* This example shows how to get single-shot range
- measurements from the VL53L0X. The sensor can optionally be
- configured with different ranging profiles, as described in
- the VL53L0X API user manual, to get better performance for
- a certain application. This code is based on the four
- "SingleRanging" examples in the VL53L0X API.
-
- The range readings are in units of mm. */
-
 #include <Wire.h>
 #include <VL53L0X.h>
+#include <CAN.h>            
 
 VL53L0X sensor;
 
+// Device and Sensor Configuration
+const uint8_t DEVICE_ADDRESS = 0x04;            // Unique ID for this sensor node
+const uint8_t SENSOR_TYPE_VL53L0X_SINGLE = 0x04; // Identifier for VL53L0X Single-Shot
+const uint8_t DATA_PARAMETERS = 0x01;           // Number of data parameters (1: Range)
 
-// Uncomment this line to use long range mode. This
-// increases the sensitivity of the sensor and extends its
-// potential range, but increases the likelihood of getting
-// an inaccurate reading because of reflections from objects
-// other than the intended target. It works best in dark
-// conditions.
+// CAN Configuration
+const uint32_t CAN_ID = 0x301;                  // CAN ID for VL53L0X Single-Shot
+const uint8_t CAN_DATA_LENGTH = 8;              // Length of CAN data in bytes
 
-//#define LONG_RANGE
+// Diagnostic Flags
+uint8_t firmwareFlags = 0x01;                   // Firmware version 1
+uint8_t hardwareFlags = 0x00;                   // Initialize hardware flags
 
-
-// Uncomment ONE of these two lines to get
-// - higher speed at the cost of lower accuracy OR
-// - higher accuracy at the cost of lower speed
-
-//#define HIGH_SPEED
-//#define HIGH_ACCURACY
-
+// Function to calculate checksum 
+uint8_t calculateChecksum(uint8_t data[], uint8_t length) {
+    uint16_t sum = 0;
+    for (uint8_t i = 0; i < length; i++) {
+        sum += data[i];
+    }
+    return (uint8_t)(sum & 0xFF);
+}
 
 void setup()
 {
-  Serial.begin(9600);
-  Wire.begin();
+    Serial.begin(9600);
+    while (!Serial) {
+        ; // Wait for Serial to initialize
+    }
 
-  sensor.setTimeout(500);
-  if (!sensor.init())
-  {
-    Serial.println("Failed to detect and initialize sensor!");
-    while (1) {}
-  }
+    Wire.begin();
+
+    // Initialize CAN bus at 500 kbps
+    if (!CAN.begin(500E3)) { // 500 kbps
+        Serial.println("CAN bus initialization failed.");
+        while (1); // Halt if CAN initialization fails
+    }
+
+    Serial.println("CAN bus initialized successfully.");
+
+    sensor.setTimeout(500);
+    if (!sensor.init())
+    {
+        Serial.println("Failed to detect and initialize VL53L0X!");
+        hardwareFlags |= 0x01; // Set hardware error flag
+        while (1) {}
+    }
 
 #if defined LONG_RANGE
-  // lower the return signal rate limit (default is 0.25 MCPS)
-  sensor.setSignalRateLimit(0.1);
-  // increase laser pulse periods (defaults are 14 and 10 PCLKs)
-  sensor.setVcselPulsePeriod(VL53L0X::VcselPeriodPreRange, 18);
-  sensor.setVcselPulsePeriod(VL53L0X::VcselPeriodFinalRange, 14);
+    // lower the return signal rate limit (default is 0.25 MCPS)
+    sensor.setSignalRateLimit(0.1);
+    // increase laser pulse periods (defaults are 14 and 10 PCLKs)
+    sensor.setVcselPulsePeriod(VL53L0X::VcselPeriodPreRange, 18);
+    sensor.setVcselPulsePeriod(VL53L0X::VcselPeriodFinalRange, 14);
+    firmwareFlags |= 0x02; // Set firmware flag for long range mode
 #endif
 
 #if defined HIGH_SPEED
-  // reduce timing budget to 20 ms (default is about 33 ms)
-  sensor.setMeasurementTimingBudget(20000);
+    // reduce timing budget to 20 ms (default is about 33 ms)
+    sensor.setMeasurementTimingBudget(20000);
+    firmwareFlags |= 0x04; // Set firmware flag for high speed
 #elif defined HIGH_ACCURACY
-  // increase timing budget to 200 ms
-  sensor.setMeasurementTimingBudget(200000);
+    // increase timing budget to 200 ms
+    sensor.setMeasurementTimingBudget(200000);
+    firmwareFlags |= 0x08; // Set firmware flag for high accuracy
 #endif
+
+    Serial.println("VL53L0X Single-Shot initialized successfully.");
 }
 
 void loop()
 {
-  Serial.print(sensor.readRangeSingleMillimeters());
-  if (sensor.timeoutOccurred()) { Serial.print(" TIMEOUT"); }
+    uint16_t range = sensor.readRangeSingleMillimeters();
+    bool timeout = sensor.timeoutOccurred();
 
-  Serial.println();
+    // Output the results to Serial for debugging
+    Serial.print("Range: ");
+    Serial.print(range);
+    Serial.print(" mm");
+    if (timeout) { Serial.print(" TIMEOUT"); }
+    Serial.println();
+
+    // Update diagnostic flags based on sensor status
+    updateDiagnosticFlags(range, timeout);
+
+    // Prepare CAN frame data
+    uint8_t canData[8] = {0}; // Initialize all bytes to 0
+
+    // Assign Device Address, Sensor Type, and Data Parameters
+    canData[0] = DEVICE_ADDRESS;
+    canData[1] = SENSOR_TYPE_VL53L0X_SINGLE;
+    canData[2] = DATA_PARAMETERS;
+
+    // Assign Range Data (big-endian)
+    canData[3] = highByte(range);
+    canData[4] = lowByte(range);
+
+    // Assign Firmware and Hardware Flags
+    canData[5] = firmwareFlags;
+    canData[6] = hardwareFlags;
+
+    // Calculate checksum for bytes 0-6
+    canData[7] = calculateChecksum(canData, 7);
+
+    // Send the CAN frame
+    CAN.beginPacket(CAN_ID);
+    CAN.write(canData, CAN_DATA_LENGTH); // Write the 8 bytes
+    if (CAN.endPacket()) {
+        Serial.println("CAN message sent successfully.");
+    } else {
+        Serial.println("Error sending CAN message.");
+    }
+
+    delay(1000); 
+}
+
+// Function to update diagnostic flags based on sensor status
+void updateDiagnosticFlags(uint16_t range, bool timeout)
+{
+    // Set hardware flag if timeout occurs
+    if (timeout) {
+        hardwareFlags |= 0x02; // Set bit 1 to indicate timeout
+    } else {
+        hardwareFlags &= ~0x02; // Clear bit 1
+    }
+
+    // Set firmware flag if range exceeds a threshold 
+    if (range > 3000) {
+        firmwareFlags |= 0x10; // Set bit 4 to indicate range exceeds threshold
+    } else {
+        firmwareFlags &= ~0x10; // Clear bit 4
+    }
 }
