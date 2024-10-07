@@ -1,0 +1,122 @@
+VERSION ""
+
+NS_ :
+    NS_DESC_
+    CM_
+    BA_DEF_
+    BA_
+    VAL_
+    CAT_DEF_
+    CAT_
+    FILTER
+    BA_DEF_DEF_
+    BA_DEF_ DEF_
+    BA_DEF_DEF_
+    BA_DEF_SGTYPE_
+    SGTYPE_
+    SGTYPE_VAL_
+    BA_DEF_REL_
+    BA_REL_
+    BA_DEF_DEF_REL_
+    BU_SG_REL_
+    BU_EV_REL_
+    BU_BO_REL_
+    SG_MUL_VAL_
+    SGUNIT_
+    SIGTYPE_VALTYPE_
+    SIG_VALTYPE_
+    BO_TX_BU_
+    BA_DEF_DEF_SGTYPE_
+    EV_DATA_
+    ENVVAR_DATA_
+    SGTYPE_VAL_
+    SIG_GROUP_
+    SIGTYPE_VAL_
+    VAL_TABLE_
+    SIG_VALTYPE_
+    SIGTYPE_VALTYPE_
+    BO_SG_REL_
+    BA_DEF_DEF_REL_
+    BA_DEF_REL_
+    BA_REL_
+    SG_MUL_VAL_
+    BA_DEF_DEF_
+    BA_DEF_
+    CM_
+    VAL_
+
+BS_:
+
+BU_: SensorNode
+
+**Messages and Signals:**
+
+**1. Accelerometer (IIS328DQTR)**
+
+BO_ 512 Accelerometer: 8 SensorNode
+ SG_ Accel_DeviceAddress : 0|8@1+ (1,0) [0|255] "" SensorNode
+ SG_ Accel_SensorType : 8|8@1+ (1,0) [0|255] "" SensorNode
+ SG_ Accel_DataParameters : 16|8@1+ (1,0) [0|255] "" SensorNode
+ SG_ Accel_X : 24|8@1- (0.01,0) [-1.28|1.27] "g" SensorNode
+ SG_ Accel_Y : 32|8@1- (0.01,0) [-1.28|1.27] "g" SensorNode
+ SG_ Accel_Z : 40|8@1- (0.01,0) [-1.28|1.27] "g" SensorNode
+ SG_ Accel_FirmwareFlags : 48|8@1+ (1,0) [0|255] "" SensorNode
+
+**2. PT1000 Temperature Sensor**
+
+BO_ 256 TemperatureSensor: 8 SensorNode
+ SG_ Temp_DeviceAddress : 0|8@1+ (1,0) [0|255] "" SensorNode
+ SG_ Temp_SensorType : 8|8@1+ (1,0) [0|255] "" SensorNode
+ SG_ Temp_DataParameters : 16|8@1+ (1,0) [0|255] "" SensorNode
+ SG_ Temperature : 31|16@0- (0.01,0) [-327.68|327.67] "°C" SensorNode
+ SG_ Temp_FirmwareFlags : 40|8@1+ (1,0) [0|255] "" SensorNode
+ SG_ Temp_HardwareFlags : 48|8@1+ (1,0) [0|255] "" SensorNode
+
+**3. TMAG5273 Basic Readings (MagX & MagY)**
+
+BO_ 1024 TMAG5273_MagXY: 8 SensorNode
+ SG_ TMAG_DeviceAddress : 0|8@1+ (1,0) [0|255] "" SensorNode
+ SG_ TMAG_SensorType : 8|8@1+ (1,0) [0|255] "" SensorNode
+ SG_ TMAG_DataParameters : 16|8@1+ (1,0) [0|255] "" SensorNode
+ SG_ MagX : 31|16@0- (0.01,0) [-327.68|327.67] "mT" SensorNode
+ SG_ MagY : 47|16@0- (0.01,0) [-327.68|327.67] "mT" SensorNode
+
+**4. TMAG5273 Basic Readings (MagZ & Temperature)**
+
+BO_ 1025 TMAG5273_MagZ_Temp: 8 SensorNode
+ SG_ TMAG_DeviceAddress : 0|8@1+ (1,0) [0|255] "" SensorNode
+ SG_ TMAG_SensorType : 8|8@1+ (1,0) [0|255] "" SensorNode
+ SG_ TMAG_DataParameters : 16|8@1+ (1,0) [0|255] "" SensorNode
+ SG_ MagZ : 31|16@0- (0.01,0) [-327.68|327.67] "mT" SensorNode
+ SG_ TMAG_Temperature : 47|16@0- (0.01,0) [-327.68|327.67] "°C" SensorNode
+
+**5. TMAG5273 Diagnostics**
+
+BO_ 1026 TMAG5273_Diagnostics: 8 SensorNode
+ SG_ TMAG_DeviceAddress : 0|8@1+ (1,0) [0|255] "" SensorNode
+ SG_ TMAG_SensorType : 8|8@1+ (1,0) [0|255] "" SensorNode
+ SG_ TMAG_DataParameters : 16|8@1+ (1,0) [0|255] "" SensorNode
+ SG_ TMAG_FirmwareFlags : 24|8@1+ (1,0) [0|255] "" SensorNode
+ SG_ TMAG_HardwareFlags : 32|8@1+ (1,0) [0|255] "" SensorNode
+ SG_ Reserved1 : 40|8@1+ (1,0) [0|0] "" SensorNode
+ SG_ Reserved2 : 48|8@1+ (1,0) [0|0] "" SensorNode
+
+**6. VL53L0X Continuous**
+
+BO_ 1280 VL53L0X_Continuous: 8 SensorNode
+ SG_ VL53_DeviceAddress : 0|8@1+ (1,0) [0|255] "" SensorNode
+ SG_ VL53_SensorType : 8|8@1+ (1,0) [0|255] "" SensorNode
+ SG_ VL53_DataParameters : 16|8@1+ (1,0) [0|255] "" SensorNode
+ SG_ VL53_Range : 31|16@0+ (1,0) [0|65535] "mm" SensorNode
+ SG_ VL53_FirmwareFlags : 40|8@1+ (1,0) [0|255] "" SensorNode
+ SG_ VL53_HardwareFlags : 48|8@1+ (1,0) [0|255] "" SensorNode
+
+**7. VL53L0X Single-Shot**
+
+BO_ 1281 VL53L0X_SingleShot: 8 SensorNode
+ SG_ VL53S_DeviceAddress : 0|8@1+ (1,0) [0|255] "" SensorNode
+ SG_ VL53S_SensorType : 8|8@1+ (1,0) [0|255] "" SensorNode
+ SG_ VL53S_DataParameters : 16|8@1+ (1,0) [0|255] "" SensorNode
+ SG_ VL53S_Range : 31|16@0+ (1,0) [0|65535] "mm" SensorNode
+ SG_ VL53S_FirmwareFlags : 40|8@1+ (1,0) [0|255] "" SensorNode
+ SG_ VL53S_HardwareFlags : 48|8@1+ (1,0) [0|255] "" SensorNode
